@@ -55,6 +55,7 @@ def getcfg(args):
 
 
 def get_git_svn_repositories(args):
+    """Returns the list of known svn repositories"""
     dirs = []
     for i in glob.glob(os.path.join(args.git_svn_dir, '*')):
         dirs.append(i)
@@ -62,6 +63,7 @@ def get_git_svn_repositories(args):
 
 
 def get_svn_repositories(args):
+    """Return the list of known git-svn repositories"""
     dirs = []
     for i in glob.glob(os.path.join(args.svn_dir, '*')):
         dirs.append(i)
@@ -177,8 +179,8 @@ def main():
     if func:
         sys.exit(func(args))
     else:
-        print(args)
-
+        get_cmdline_parser().print_help()
+        sys.exit(1)
 
 if "__main__" == __name__:
     main()
