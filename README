@@ -1,0 +1,4 @@
+The purpose of this tool is to ease the developers which are stuck with svn and
+when git-svn is not able to handle some kind of svn repositories.
+One example is for handling svn development which are renamed/moved at its
+end-of-life time.
