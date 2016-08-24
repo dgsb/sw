@@ -32,11 +32,34 @@ def initcfg(args):
         return 1
 
     cfg = configparser.ConfigParser()
-    cfg['general'] = {
+    cfg['project'] = {
+        'current_project': 'default'
+    }
+    cfg['default'] = {
         'git_dir': args.git_dir,
         'svn_dir': args.svn_dir,
         'repository': args.repository
     }
+    with open(args.config_file, 'w') as f:
+        cfg.write(f)
+
+
+def switch_project(args):
+    """This function changes the default current project which is stored in the
+    configuration file"""
+    cfg = configparse.ConfigParser()
+    cfg.read(args.config_file)
+    try:
+        cur_project = cfg['project']['current_project']
+    except:
+        cur_project = None
+    # No change needed, this is already the default current project
+    if cur_project and cur_project == args.project_name:
+        return
+    if args.project_name not in cfg.keys():
+        print("The project " + args.project_name + " does not exist")
+        sys.exit(1)
+    cfg['project']['current_project'] = args.project_name
     with open(args.config_file, 'w') as f:
         cfg.write(f)
 
@@ -46,11 +69,23 @@ def getcfg(args):
     configuration file"""
     cfg = configparser.ConfigParser()
     cfg.read(args.config_file)
-    if 'general' not in cfg.sections():
+    
+    # select the correct project
+    cur_project = getattr(args, 'project')
+    if not cur_project:
+        try:
+            cur_project = cfg['project']['current_project']
+        except:
+            pass
+    if not cur_project:
+        print("Can not identify the current project")
+        sys.exit(1)
+
+    if 'default' not in cfg.sections():
         return args
-    for i in cfg['general']:
+    for i in cfg['default']:
         if not getattr(args, i):
-            setattr(args, i, cfg['general'][i])
+            setattr(args, i, cfg['default'][i])
     return args
 
 
@@ -126,6 +161,10 @@ def get_cmdline_parser():
     parser.add_argument(
         '-r', '--repository',
         help='the main git repository')
+    parser.add_argument(
+        '--project',
+        help='Context identifier for a workspace',
+        default='default')
 
     subparser = parser.add_subparsers(dest='subcommand')
 
@@ -138,6 +177,32 @@ def get_cmdline_parser():
         action='store_true',
         help='Force the overwrite of the config file')
     initcfg_parser.set_defaults(func=initcfg)
+
+    # Command for adding a new project with its set of repositories
+    add_project_parser = subparser.add_parser(
+        'add_project',
+        help='Add configuration value for a new project')
+    add_project_parser.add_argument(
+        'project-name',
+        help='The name of the project')
+    add_project_parser.add_argument(
+        'git-dir',
+        help='The directory where the main git repository will be stored')
+    add_project_parser.add_argument(
+        'svn-dir',
+        help='The directory where the per branch svn repositories will be stored')
+    add_project_parser.add_argument(
+        'git-svn-dir',
+        help='The directory where the per branch git-svn repositories will be stored')
+
+    # Command for changing the current project
+    switch_project_parser = subparser.add_parser(
+        'switch_project',
+        help="Change the default current project")
+    switch_project_parser.add_argument(
+        'project-name',
+        help="The name of the new default project")
+    switch_project_parser.set_defaults(func=switch_project)
 
     # Command for updating the svn repositories
     update_parser = subparser.add_parser(
