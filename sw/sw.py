@@ -103,6 +103,8 @@ def add_branch(args):
     sh.git('remote', 'add', name, repo_dir)
     sh.git('fetch', name)
     sh.git('branch', name, name + "/master")
+    os.chdir(repo_dir)
+    sh.git('remote', 'add', 'origin', args.repository)
 
 
 def branch2repo(branch_name):
