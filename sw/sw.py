@@ -91,6 +91,20 @@ def list_branches(args):
         print(os.path.basename(i))
 
 
+def add_branch(args):
+    name = os.path.basename(args.branch_url)
+    if name in get_git_svn_repositories(args):
+        print("The branch is already tracked")
+        return 1
+
+    repo_dir = os.path.join(args.git_svn_dir, name)
+    sh.git('svn', 'clone', args.branch_url, repo_dir)
+    os.chdir(args.repository)
+    sh.git('remote', 'add', name, repo_dir)
+    sh.git('fetch', name)
+    sh.git('branch', name, name + "/master")
+
+
 def branch2repo(branch_name):
     pass
 
@@ -150,6 +164,15 @@ def get_cmdline_parser():
         'list',
         help='List all known and commitable branches')
     list_parser.set_defaults(func=list_branches)
+
+    # Add a new svn branch to track through git-svn
+    add_branch_parser = subparser.add_parser(
+        'add_branch',
+        help='Add a new svn branch to track')
+    add_branch_parser.add_argument(
+        'branch_url', 
+        help='The url of the svn branch to track')
+    add_branch_parser.set_defaults(func=add_branch)
 
     # Command for commiting the current git branch in svn
     commit_parser = subparser.add_parser(
