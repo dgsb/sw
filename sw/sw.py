@@ -28,16 +28,18 @@ def check_binary():
 
 
 def initcfg(args):
-    if os.path.exists(args.config_file):
-        print("The configuration file already exists")
-        return 1
-
     cfg = configparser.ConfigParser()
-    cfg['general'] = {
-        'git_dir': args.git_dir,
-        'svn_dir': args.svn_dir,
-        'repository': args.repository
-    }
+    if os.path.exists(args.config_file):
+        cfg.read(args.config_file)
+
+    section = cfg['general']
+    if args.svn_server:
+        section['svn_server'] = args.svn_server
+    if args.svn_dir:
+        section['svn_dir'] = args.svn_dir
+    if args.repository:
+        section['repository'] = args.repository
+
     with open(args.config_file, 'w') as f:
         cfg.write(f)
 
@@ -92,14 +94,23 @@ def list_branches(args):
         print(os.path.basename(i))
 
 
+def ls_remote(args):
+    ls_url = args.svn_server
+    if args.subdir:
+        ls_url = os.path.join(ls_url, args.subdir)
+    res = sh.svn('ls', ls_url)
+    print(res)
+
+
 def add_branch(args):
-    name = os.path.basename(args.branch_url)
+    name = os.path.basename(args.branch_name)
     if name in get_git_svn_repositories(args):
         print("The branch is already tracked")
         return 1
 
+    branch_url = os.path.join(args.svn_server, args.branch_name)
     repo_dir = os.path.join(args.git_svn_dir, name)
-    sh.git('svn', 'clone', args.branch_url, repo_dir)
+    sh.git('svn', 'clone', branch_url, repo_dir)
     os.chdir(args.repository)
     sh.git('remote', 'add', name, repo_dir)
     sh.git('fetch', name)
@@ -145,8 +156,8 @@ def get_cmdline_parser():
         '-c', '--config-file',
         default=os.path.join(os.environ["HOME"], '.swrc'))
     parser.add_argument(
-        '-d', '--git-dir',
-        help='the directory where to store the git objects for svn/git dual repositories')
+        '--svn-server',
+        help="The svn url which will be used as a prefix to svn branches")
     parser.add_argument(
         '-s', '--svn-dir',
         help='the directory where are stored the svn branches checkouts')
@@ -181,13 +192,24 @@ def get_cmdline_parser():
         help='List all known and commitable branches')
     list_parser.set_defaults(func=list_branches)
 
+    # List remote svn branches
+    list_remote_parser = subparser.add_parser(
+        'ls_remote',
+        help='list remote svn branch from the servers')
+    list_remote_parser.add_argument(
+        'subdir',
+        nargs='?',
+        default=None,
+        help="Optional subdirectory to browse")
+    list_remote_parser.set_defaults(func=ls_remote)
+
     # Add a new svn branch to track through git-svn
     add_branch_parser = subparser.add_parser(
         'add_branch',
         help='Add a new svn branch to track')
     add_branch_parser.add_argument(
-        'branch_url', 
-        help='The url of the svn branch to track')
+        'branch_name', 
+        help='The name of the svn branch to track')
     add_branch_parser.set_defaults(func=add_branch)
 
     # Remove a svn branch
