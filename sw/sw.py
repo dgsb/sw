@@ -9,6 +9,7 @@ import configparser
 import sh
 import stat
 import glob
+import shutil
 
 cmdparser = None
 
@@ -107,6 +108,19 @@ def add_branch(args):
     sh.git('remote', 'add', 'origin', args.repository)
 
 
+def rm_branch(args):
+    branches = [os.path.basename(i) for i in get_git_svn_repositories(args)]
+    if args.branch_name not in branches:
+        print('The branch ' + args.branch_name + ' is not currently tracked',
+              file=sys.stderr)
+        sys.exit(1)
+
+    os.chdir(args.repository)
+    sh.git('branch', '-D', args.branch_name)
+    sh.git('remote', 'remove', args.branch_name)
+    print("Needs to remove " + os.path.join(args.git_svn_dir, args.branch_name))
+
+
 def branch2repo(branch_name):
     pass
 
@@ -175,6 +189,14 @@ def get_cmdline_parser():
         'branch_url', 
         help='The url of the svn branch to track')
     add_branch_parser.set_defaults(func=add_branch)
+
+    # Remove a svn branch
+    rm_branch_parser = subparser.add_parser(
+        'rm_branch',
+        help='Stop tracking a svn branch')
+    rm_branch_parser.add_argument(
+        'branch_name')
+    rm_branch_parser.set_defaults(func=rm_branch)
 
     # Command for commiting the current git branch in svn
     commit_parser = subparser.add_parser(
