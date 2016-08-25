@@ -145,7 +145,10 @@ def repo2branch(reponame):
 
 
 def commit(args):
-    pass
+    branches = [os.path.basename(i) for i in get_git_svn_repositories(args)]
+    if args.destbranch not in branches:
+        print("Unknown svn branch: " + args.destbranch)
+        sys.exit(1)
 
 
 def get_cmdline_parser():
@@ -212,7 +215,7 @@ def get_cmdline_parser():
         'add_branch',
         help='Add a new svn branch to track')
     add_branch_parser.add_argument(
-        'branch_name', 
+        'branch_name',
         help='The name of the svn branch to track')
     add_branch_parser.add_argument(
         '-r',
@@ -232,16 +235,15 @@ def get_cmdline_parser():
     # Command for commiting the current git branch in svn
     commit_parser = subparser.add_parser(
         'commit',
-        help='commit the current branch on the wanted svn branch'
-    )
-    commit_parser.set_defaults(func=commit)
+        help='commit the current branch on the wanted svn branch')
     commit_parser.add_argument(
         'destbranch',
         help="The svn branch we want to commit on")
+    #commit_parser.set_defaults(func=commit)
 
     cmdparser = parser
     return cmdparser
-    
+
 
 def main():
     args = get_cmdline_parser().parse_args()
