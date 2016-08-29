@@ -110,7 +110,10 @@ def add_branch(args):
 
     branch_url = os.path.join(args.svn_server, args.branch_name)
     repo_dir = os.path.join(args.git_svn_dir, name)
-    sh.git('svn', 'clone', branch_url, repo_dir)
+    if None == args.r:
+        sh.git('svn', 'clone', branch_url, repo_dir)
+    else:
+        sh.git('svn', 'clone', '-r', str(args.r) + ':HEAD', branch_url, repo_dir)
     os.chdir(args.repository)
     sh.git('remote', 'add', name, repo_dir)
     sh.git('fetch', name)
@@ -211,6 +214,11 @@ def get_cmdline_parser():
     add_branch_parser.add_argument(
         'branch_name', 
         help='The name of the svn branch to track')
+    add_branch_parser.add_argument(
+        '-r',
+        default=None,
+        type=int,
+        help='The oldest revision to fetch on the branch')
     add_branch_parser.set_defaults(func=add_branch)
 
     # Remove a svn branch
