@@ -129,7 +129,8 @@ def rm_branch(args):
     os.chdir(args.repository)
     sh.git('branch', '-D', args.branch_name)
     sh.git('remote', 'remove', args.branch_name)
-    print("Needs to remove " + os.path.join(args.git_svn_dir, args.branch_name))
+    print("Removing " + os.path.join(args.git_svn_dir, args.branch_name))
+    shutil.rmtree(os.path.join(args.git_svn_dir, args.branch_name))
 
 
 def branch2repo(branch_name):
