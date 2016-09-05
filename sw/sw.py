@@ -136,19 +136,44 @@ def rm_branch(args):
     shutil.rmtree(os.path.join(args.git_svn_dir, args.branch_name))
 
 
-def branch2repo(branch_name):
+def commit(args):
+    branches = [os.path.basename(i) for i in get_git_svn_repositories(args)]
+    if args.dstbranch not in branches:
+        print("Unknown svn branch: " + args.dstbranch)
+        sys.exit(1)
+
+    if not args.srcbranch:
+        args.srcbranch = str(sh.git('rev-parse', '--abbrev-ref', 'HEAD')).strip()
+
+    branches = [str(i).split()[1].split('/')[2] for i in sh.git('show-ref', '--heads')]
+    if args.srcbranch not in branches:
+        print("Unknwon git branch " + args.srcbranch)
+        sys.exit(1)
+
+    # Both branches exist, check the that the src branch is up to date
+    # regarding the dest branch
+    commits = sh.git('log', '--oneline', args.srcbranch + '..' + args.dstbranch)
+    if len(str(commits).splitlines()) > 0:
+        print("The source branch is not up to date")
+        sys.exit(1)
+
+    os.chdir(os.path.join(args.git_svn_dir, args.dstbranch))
+    sh.git('fetch', '--all')
+    cur_branch = str(sh.git('rev-parse', '--abbrev-ref', 'HEAD')).strip()
+    if cur_branch != "master":
+        print("The current branch of the git-svn repositories is not master")
+        sys.exit(1)
+
+    sh.git('merge', 'ff-only', 'origin/' + args.srcbranch)
+    sh.git('svn', 'dcommit', '-n')
+ 
+
+def branch_to_git_svn_repo(branch_name):
     pass
 
 
 def repo2branch(reponame):
     pass
-
-
-def commit(args):
-    branches = [os.path.basename(i) for i in get_git_svn_repositories(args)]
-    if args.destbranch not in branches:
-        print("Unknown svn branch: " + args.destbranch)
-        sys.exit(1)
 
 
 def get_cmdline_parser():
@@ -237,9 +262,14 @@ def get_cmdline_parser():
         'commit',
         help='commit the current branch on the wanted svn branch')
     commit_parser.add_argument(
-        'destbranch',
+        'dstbranch',
         help="The svn branch we want to commit on")
-    #commit_parser.set_defaults(func=commit)
+    commit_parser.add_argument(
+        'srcbranch',
+        nargs='?',
+        default=None,
+        help="The new content we want to commit on svn. By default it is the current branch")
+    commit_parser.set_defaults(func=commit)
 
     cmdparser = parser
     return cmdparser
