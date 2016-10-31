@@ -137,6 +137,7 @@ def rm_branch(args):
 
 
 def commit(args):
+    os.chdir(args.repository)
     branches = [os.path.basename(i) for i in get_git_svn_repositories(args)]
     if args.dstbranch not in branches:
         print("Unknown svn branch: " + args.dstbranch)
