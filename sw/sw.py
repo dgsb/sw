@@ -174,7 +174,12 @@ def commit(args):
         sys.exit(1)
 
     sh.git('merge', '--ff-only', 'origin/' + args.srcbranch)
-    dcommits = sh.git('svn', 'dcommit', '-n')
+    if args.n:
+        dcommits = sh.git('svn', 'dcommit', '-n')
+    else:
+        dcommits = sh.git('svn', 'dcommit')
+        os.chdir(args.repository)
+        sh.git('rebase', args.dstbranch + "/master", args.srcbranch)
     print("Commit on svn: " + str(dcommits))
  
 
@@ -271,6 +276,7 @@ def get_cmdline_parser():
     commit_parser = subparser.add_parser(
         'commit',
         help='commit the current branch on the wanted svn branch')
+    commit_parser.add_argument('-n', help='dry-run mode', action='store_true')
     commit_parser.add_argument(
         'dstbranch',
         help="The svn branch we want to commit on")
@@ -301,6 +307,7 @@ def main():
     else:
         get_cmdline_parser().print_help()
         sys.exit(1)
+
 
 if "__main__" == __name__:
     main()
