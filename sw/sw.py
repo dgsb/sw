@@ -152,9 +152,10 @@ def commit(args):
 
     # Both branches exist, check the that the src branch is up to date
     # regarding the dest branch
-    commits = sh.git('log', '--oneline', args.srcbranch + '..' + args.dstbranch)
-    if len(str(commits).splitlines()) > 0:
-        print("The source branch is not up to date")
+    commits = sh.git('rev-list', args.srcbranch + '..' + args.dstbranch)
+    commits = str(commits).strip()
+    if len(commits.splitlines()) > 0:
+        print("The source branch is not up to date: " + str(commits.splitlines()))
         sys.exit(1)
 
     os.chdir(os.path.join(args.git_svn_dir, args.dstbranch))
@@ -164,8 +165,9 @@ def commit(args):
         print("The current branch of the git-svn repositories is not master")
         sys.exit(1)
 
-    sh.git('merge', 'ff-only', 'origin/' + args.srcbranch)
-    sh.git('svn', 'dcommit', '-n')
+    sh.git('merge', '--ff-only', 'origin/' + args.srcbranch)
+    dcommits = sh.git('svn', 'dcommit', '-n')
+    print("Commit on svn: " + str(dcommits))
  
 
 def branch_to_git_svn_repo(branch_name):
