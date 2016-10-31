@@ -179,6 +179,7 @@ def commit(args):
     else:
         dcommits = sh.git('svn', 'dcommit')
         os.chdir(args.repository)
+        sh.git('fetch', '--all')
         sh.git('rebase', args.dstbranch + "/master", args.srcbranch)
     print("Commit on svn: " + str(dcommits))
  
