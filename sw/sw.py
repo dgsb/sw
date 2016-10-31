@@ -153,10 +153,17 @@ def commit(args):
 
     # Both branches exist, check the that the src branch is up to date
     # regarding the dest branch
-    commits = sh.git('rev-list', args.srcbranch + '..' + args.dstbranch)
+    commits = sh.git('rev-list', args.srcbranch + '..' + args.dstbranch + '/master')
     commits = str(commits).strip()
     if len(commits.splitlines()) > 0:
         print("The source branch is not up to date: " + str(commits.splitlines()))
+        sys.exit(1)
+
+    # Check there is actually something to commit
+    commits = sh.git('rev-list', args.dstbranch + "/master.." + args.srcbranch)
+    commits = str(commits).strip()
+    if len(commits.splitlines()) == 0:
+        print("There is nothing to commit on branch " + args.srcbranch)
         sys.exit(1)
 
     os.chdir(os.path.join(args.git_svn_dir, args.dstbranch))
